@@ -4,18 +4,18 @@ const bodyParser = require("body-parser");
 const path = require("path");
 
 const app = express();
+const fs = require('fs');
 
 // Set static path
 app.use(express.static(path.join(__dirname, "client")));
 
 app.use(bodyParser.json());
 
-const publicVapidKey =
-  "BJthRQ5myDgc7OSXzPCMftGw-n16F7zQBEN7EUD6XxcfTTvrLGWSIG7y_JxiWtVlCFua0S8MTB5rPziBqNx1qIo";
-const privateVapidKey = "3KzvKasA2SoCxsp0iIG_o9B0Ozvl1XDwI63JRKNIWBM";
+const publicVapidKey ="";
+const privateVapidKey = "";
 
 webpush.setVapidDetails(
-  "mailto:test@test.com",
+  "mailto:contact@please-open.it",
   publicVapidKey,
   privateVapidKey
 );
@@ -24,17 +24,29 @@ webpush.setVapidDetails(
 app.post("/subscribe", (req, res) => {
   // Get pushSubscription object
   const subscription = req.body;
+  const username = req.query.username;
 
-  // Send 201 - resource created
-  res.status(201).json({});
+  try {
+    if (fs.existsSync("/etc/ssh-notification/" + username + "-subscription.json")) {
+      let rawdata = fs.readFileSync("/etc/ssh-notification/" + username + "-subscription.json");
+      const oldSubscription = JSON.parse(rawdata);
+      let payload = JSON.stringify({ type: "error", title: "This slot is not available, please contact admin." });
+      if(JSON.stringify(oldSubscription) === JSON.stringify(subscription) ){
+        console.log("already subscribed");
+        payload = JSON.stringify({ type: "error", title: "Already subscribed" });
+      }
+      res.status(201).json({});
+      webpush.sendNotification(subscription, payload).catch(err => console.error(err));
+    }else {
+      fs.writeFile("/etc/ssh-notification/" + username + '-subscription.json', JSON.stringify(subscription), function (err) {
+        if (err) return console.log(err);
+      });
+      res.status(201).json({});
+    }
+  } catch(err) {
+    console.error(err)
+  }
 
-  // Create payload
-  const payload = JSON.stringify({ title: "Push Test" });
-
-  // Pass object into sendNotification
-  webpush
-    .sendNotification(subscription, payload)
-    .catch(err => console.error(err));
 });
 
 const port = 5000;

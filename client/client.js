@@ -1,9 +1,13 @@
 const publicVapidKey =
-  "BJthRQ5myDgc7OSXzPCMftGw-n16F7zQBEN7EUD6XxcfTTvrLGWSIG7y_JxiWtVlCFua0S8MTB5rPziBqNx1qIo";
+  "";
 
 // Check for service worker
 if ("serviceWorker" in navigator) {
   send().catch(err => console.error(err));
+}
+
+async function testBackNotif(){
+console.log("from notif");
 }
 
 // Register SW, Register Push, Send Push
@@ -25,7 +29,11 @@ async function send() {
 
   // Send Push Notification
   console.log("Sending Push...");
-  await fetch("/subscribe", {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const username = urlParams.get('username')
+
+  await fetch("/subscribe?username="+username, {
     method: "POST",
     body: JSON.stringify(subscription),
     headers: {
